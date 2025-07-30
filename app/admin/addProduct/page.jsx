@@ -6,7 +6,8 @@ import { toast } from "react-toastify";
 import { assets } from "../../../Assets/assets";
 
 const page = () => {
-  const [image, setImage] = useState(null); // Changed from false to null
+  const [image, setImage] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [data, setData] = useState({
     title: "",
     description: "",
@@ -14,27 +15,35 @@ const page = () => {
     author: "Alex Bennett",
     authorImg: "/author_img.png",
   });
-  const [loading, setLoading] = useState(false); // Add loading state
 
   const onChangeHandler = (event) => {
     const name = event.target.name;
     const value = event.target.value;
-    setData((prevData) => ({ ...prevData, [name]: value })); // Fixed state update
-    console.log(data);
+    setData((prevData) => ({ ...prevData, [name]: value }));
   };
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    setLoading(true); // Set loading state
+    
+    // Validation
+    if (!data.title.trim()) {
+      toast.error("Please enter a blog title");
+      return;
+    }
+    
+    if (!data.description.trim()) {
+      toast.error("Please enter a blog description");
+      return;
+    }
+    
+    if (!image) {
+      toast.error("Please select an image");
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      // Validate required fields
-      if (!data.title.trim() || !data.description.trim() || !image) {
-        toast.error("Please fill all required fields and upload an image");
-        setLoading(false);
-        return;
-      }
-
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("description", data.description);
@@ -43,7 +52,6 @@ const page = () => {
       formData.append("authorImg", data.authorImg);
       formData.append("image", image);
 
-      // Add better error handling
       const response = await axios.post("/api/blog", formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -51,8 +59,9 @@ const page = () => {
       });
 
       if (response.data.success) {
-        toast.success(response.data.msg || "Blog added successfully!");
-        setImage(null); // Reset to null
+        toast.success(response.data.msg);
+        // Reset form
+        setImage(false);
         setData({
           title: "",
           description: "",
@@ -61,20 +70,22 @@ const page = () => {
           authorImg: "/author_img.png",
         });
       } else {
-        toast.error(response.data.msg || "Failed to add blog");
+        toast.error(response.data.msg || "Error adding blog");
       }
     } catch (error) {
-      console.error("Error submitting blog:", error);
-      // More specific error messages
+      console.error("Error:", error);
       if (error.response) {
-        toast.error(`Server Error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`);
+        // Server responded with error status
+        toast.error(error.response.data.msg || "Server error occurred");
       } else if (error.request) {
-        toast.error("Network error: Unable to reach server");
+        // Request was made but no response received
+        toast.error("No response from server. Please check your connection.");
       } else {
-        toast.error("Error: " + error.message);
+        // Something else happened
+        toast.error("An unexpected error occurred");
       }
     } finally {
-      setLoading(false); // Reset loading state
+      setLoading(false);
     }
   };
 
@@ -84,7 +95,7 @@ const page = () => {
         <p className="text-xl">Upload thumbnail</p>
         <label htmlFor="image" className="cursor-pointer">
           <Image
-            className="mt-4 border-2 border-dashed border-gray-300 rounded"
+            className="mt-4 border-2 border-dashed border-gray-300 rounded-lg"
             src={!image ? assets.upload_area : URL.createObjectURL(image)}
             width={140}
             height={70}
@@ -92,14 +103,14 @@ const page = () => {
           />
         </label>
         <input
-          onChange={(e) => setImage(e.target.files[0] || null)}
+          onChange={(e) => setImage(e.target.files[0])}
           type="file"
           id="image"
-          accept="image/*" // Only accept image files
+          accept="image/*"
           hidden
           required
         />
-
+        
         <p className="text-xl mt-4">Blog title</p>
         <input
           name="title"
@@ -110,18 +121,18 @@ const page = () => {
           placeholder="Type here"
           required
         />
-
+        
         <p className="text-xl mt-4">Blog Description</p>
         <textarea
           name="description"
           onChange={onChangeHandler}
           value={data.description}
-          className="w-full sm:w-[500px] mt-4 px-4 py-3 border rounded resize-vertical"
+          className="w-full sm:w-[500px] mt-4 px-4 py-3 border rounded"
           placeholder="Write Content here"
           rows={6}
           required
         />
-
+        
         <p className="text-xl mt-4">Blog Category</p>
         <select
           onChange={onChangeHandler}
@@ -133,7 +144,7 @@ const page = () => {
           <option value="Technology">Technology</option>
           <option value="Lifestyle">Lifestyle</option>
         </select>
-
+        
         <br />
         <button
           type="submit"
