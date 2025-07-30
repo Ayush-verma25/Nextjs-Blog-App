@@ -1,4 +1,4 @@
-import { NextResponse } from "next.js/server";
+import { NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import { ConnectDB } from "../../../lib/config/db";
 import BlogModel from "../../../lib/models/BlogModels";
@@ -23,7 +23,7 @@ export async function GET(request) {
       return NextResponse.json({ blogs });
     }
   } catch (error) {
-    console.error("GET Error:", error);
+    console.error("Error fetching blogs:", error);
     return NextResponse.json({ error: "Failed to fetch blogs" }, { status: 500 });
   }
 }
@@ -31,37 +31,30 @@ export async function GET(request) {
 // API Endpoint for Uploading Blog
 export async function POST(request) {
   try {
-    console.log("POST request received");
-    
     const formData = await request.formData();
-    console.log("Form data received");
-    
     const timestamp = Date.now();
+
     const image = formData.get("image");
     
-    if (!image) {
+    // Validate image
+    if (!image || image.size === 0) {
       return NextResponse.json({ 
         success: false, 
-        msg: "No image provided" 
+        error: "No image provided" 
       }, { status: 400 });
     }
 
-    console.log("Image file:", image.name, "Size:", image.size);
-
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), "public");
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    // Process image
     const imageByteData = await image.arrayBuffer();
     const buffer = Buffer.from(imageByteData);
-    const imagePath = path.join(uploadsDir, `${timestamp}_${image.name}`);
     
+    // Create public directory if it doesn't exist
+    const publicDir = path.join(process.cwd(), 'public');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    
+    const imagePath = path.join(publicDir, `${timestamp}_${image.name}`);
     await writeFile(imagePath, buffer);
-    console.log("Image saved to:", imagePath);
-    
     const imgUrl = `/${timestamp}_${image.name}`;
 
     const blogData = {
@@ -73,31 +66,27 @@ export async function POST(request) {
       authorImg: formData.get("authorImg"),
     };
 
-    console.log("Blog data to save:", blogData);
-
     // Validate required fields
     if (!blogData.title || !blogData.description) {
       return NextResponse.json({ 
         success: false, 
-        msg: "Title and description are required" 
+        error: "Title and description are required" 
       }, { status: 400 });
     }
 
-    const savedBlog = await BlogModel.create(blogData);
-    console.log("Blog saved successfully:", savedBlog._id);
+    await BlogModel.create(blogData);
+    console.log("Blog saved successfully");
 
     return NextResponse.json({ 
       success: true, 
-      msg: "Blog Added Successfully",
-      blog: savedBlog
+      msg: "Blog Added Successfully" 
     });
 
   } catch (error) {
-    console.error("POST Error:", error);
+    console.error("Error creating blog:", error);
     return NextResponse.json({ 
       success: false, 
-      msg: "Failed to add blog",
-      error: error.message 
+      error: "Failed to create blog" 
     }, { status: 500 });
   }
 }
@@ -109,8 +98,7 @@ export async function DELETE(request) {
     
     if (!id) {
       return NextResponse.json({ 
-        success: false, 
-        msg: "Blog ID is required" 
+        error: "Blog ID is required" 
       }, { status: 400 });
     }
 
@@ -118,13 +106,12 @@ export async function DELETE(request) {
     
     if (!blog) {
       return NextResponse.json({ 
-        success: false, 
-        msg: "Blog not found" 
+        error: "Blog not found" 
       }, { status: 404 });
     }
 
     // Delete image file
-    const imagePath = path.join(process.cwd(), "public", blog.image);
+    const imagePath = path.join(process.cwd(), 'public', blog.image);
     if (fs.existsSync(imagePath)) {
       fs.unlinkSync(imagePath);
     }
@@ -137,11 +124,9 @@ export async function DELETE(request) {
     });
 
   } catch (error) {
-    console.error("DELETE Error:", error);
+    console.error("Error deleting blog:", error);
     return NextResponse.json({ 
-      success: false, 
-      msg: "Failed to delete blog",
-      error: error.message 
+      error: "Failed to delete blog" 
     }, { status: 500 });
   }
 }
