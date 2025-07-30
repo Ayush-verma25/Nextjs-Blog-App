@@ -63,7 +63,7 @@ npm run lint	Run ESLint
 🌐 Deployment
 This app is deployed on Vercel.
 
-🔗 Live Site
+🔗 Live Site: (https://nextjs-blog-app-xi-tawny.vercel.app/)
 
 To deploy your own version:
 
