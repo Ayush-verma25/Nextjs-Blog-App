@@ -22,43 +22,44 @@ const Page = () => {
   };
 
   const onSubmitHandler = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!image) {
-      toast.error("Please upload a thumbnail image.");
-      return;
+  const formData = new FormData();
+  formData.append("title", data.title);
+  formData.append("description", data.description);
+  formData.append("category", data.category);
+  formData.append("author", data.author);
+  formData.append("authorImg", data.authorImg);
+
+  if (!image) {
+    toast.error("Please select an image.");
+    return;
+  }
+
+  formData.append("image", image);
+
+  try {
+    const response = await axios.post("/api/blog", formData);
+
+    if (response.data?.success) {
+      toast.success(response.data.msg || "Blog added successfully.");
+      setImage(false);
+      setData({
+        title: "",
+        description: "",
+        category: "Startup",
+        author: "Alex Bennett",
+        authorImg: "/author_img.png",
+      });
+    } else {
+      toast.error(response.data?.msg || "Failed to submit blog. Try again.");
     }
-
-    try {
-      const formData = new FormData();
-      formData.append("title", data.title);
-      formData.append("description", data.description);
-      formData.append("category", data.category);
-      formData.append("author", data.author);
-      formData.append("authorImg", data.authorImg);
-      formData.append("image", image);
-
-      const response = await axios.post("/api/blog", formData);
-
-      if (response.data.success) {
-        toast.success(response.data.msg || "Blog posted successfully!");
-        setImage(null);
-        setData({
-          title: "",
-          description: "",
-          category: "Startup",
-          author: "Alex Bennett",
-          authorImg: "/author_img.png",
-        });
-      } else {
-        toast.error(response.data.msg || "Something went wrong");
-      }
-    } catch (error) {
-      console.error("Submit error:", error);
-      toast.error("Failed to submit blog. Try again.");
-    }
-  };
-
+  } catch (error) {
+    console.error("Error submitting blog:", error);
+    toast.error("Server error. Blog submission failed.");
+  }
+};
+  
   return (
     <form onSubmit={onSubmitHandler} className="pt-5 px-5 sm:pt-12 sm:pl-16">
       <p className="text-xl">Upload thumbnail</p>
