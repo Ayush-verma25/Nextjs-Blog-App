@@ -14,7 +14,7 @@ const page = () => {
     author: "Alex Bennett",
     authorImg: "/author_img.png",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false); // Added loading state
+  const [loading, setLoading] = useState(false); // Add loading state
 
   const onChangeHandler = (event) => {
     const name = event.target.name;
@@ -25,21 +25,16 @@ const page = () => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    
-    // Validation
-    if (!image) {
-      toast.error("Please select an image");
-      return;
-    }
-    
-    if (!data.title.trim() || !data.description.trim()) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    setIsSubmitting(true);
+    setLoading(true); // Set loading state
 
     try {
+      // Validate required fields
+      if (!data.title.trim() || !data.description.trim() || !image) {
+        toast.error("Please fill all required fields and upload an image");
+        setLoading(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("description", data.description);
@@ -48,24 +43,16 @@ const page = () => {
       formData.append("authorImg", data.authorImg);
       formData.append("image", image);
 
-      // Log formData for debugging
-      console.log("FormData entries:");
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-
+      // Add better error handling
       const response = await axios.post("/api/blog", formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 30000, // 30 second timeout
       });
-
-      console.log("Response:", response.data); // Debug log
 
       if (response.data.success) {
         toast.success(response.data.msg || "Blog added successfully!");
-        setImage(null);
+        setImage(null); // Reset to null
         setData({
           title: "",
           description: "",
@@ -73,34 +60,21 @@ const page = () => {
           author: "Alex Bennett",
           authorImg: "/author_img.png",
         });
-        // Reset file input
-        const fileInput = document.getElementById("image");
-        if (fileInput) fileInput.value = "";
       } else {
         toast.error(response.data.msg || "Failed to add blog");
       }
     } catch (error) {
       console.error("Error submitting blog:", error);
-      
+      // More specific error messages
       if (error.response) {
-        // Server responded with error status
-        console.error("Error response:", error.response.data);
-        toast.error(
-          error.response.data?.msg || 
-          error.response.data?.message || 
-          `Server error: ${error.response.status}`
-        );
+        toast.error(`Server Error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`);
       } else if (error.request) {
-        // Request was made but no response received
-        console.error("No response received:", error.request);
-        toast.error("No response from server. Check your connection.");
+        toast.error("Network error: Unable to reach server");
       } else {
-        // Something else happened
-        console.error("Error:", error.message);
-        toast.error("An unexpected error occurred");
+        toast.error("Error: " + error.message);
       }
     } finally {
-      setIsSubmitting(false);
+      setLoading(false); // Reset loading state
     }
   };
 
@@ -118,10 +92,10 @@ const page = () => {
           />
         </label>
         <input
-          onChange={(e) => setImage(e.target.files[0])}
+          onChange={(e) => setImage(e.target.files[0] || null)}
           type="file"
           id="image"
-          accept="image/*"
+          accept="image/*" // Only accept image files
           hidden
           required
         />
@@ -142,7 +116,7 @@ const page = () => {
           name="description"
           onChange={onChangeHandler}
           value={data.description}
-          className="w-full sm:w-[500px] mt-4 px-4 py-3 border rounded"
+          className="w-full sm:w-[500px] mt-4 px-4 py-3 border rounded resize-vertical"
           placeholder="Write Content here"
           rows={6}
           required
@@ -163,14 +137,14 @@ const page = () => {
         <br />
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={loading}
           className={`mt-8 w-40 h-12 text-white rounded transition-colors ${
-            isSubmitting 
+            loading 
               ? 'bg-gray-400 cursor-not-allowed' 
               : 'bg-black hover:bg-gray-800'
           }`}
         >
-          {isSubmitting ? "ADDING..." : "ADD"}
+          {loading ? "ADDING..." : "ADD"}
         </button>
       </form>
     </>
