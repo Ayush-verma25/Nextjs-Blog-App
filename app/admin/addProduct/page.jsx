@@ -19,31 +19,11 @@ const page = () => {
   const onChangeHandler = (event) => {
     const name = event.target.name;
     const value = event.target.value;
-    setData((prevData) => ({
-      ...prevData,
-      [name]: value
-    }));
+    setData((prevData) => ({ ...prevData, [name]: value }));
   };
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    
-    // Validation
-    if (!image) {
-      toast.error("Please select an image");
-      return;
-    }
-    
-    if (!data.title.trim()) {
-      toast.error("Please enter a title");
-      return;
-    }
-    
-    if (!data.description.trim()) {
-      toast.error("Please enter a description");
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -55,27 +35,14 @@ const page = () => {
       formData.append("authorImg", data.authorImg);
       formData.append("image", image);
 
-      console.log("Submitting form data:", {
-        title: data.title,
-        description: data.description,
-        category: data.category,
-        author: data.author,
-        authorImg: data.authorImg,
-        image: image ? image.name : "No image"
-      });
-
       const response = await axios.post("/api/blog", formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 30000, // 30 second timeout
       });
 
-      console.log("Response:", response.data);
-
       if (response.data.success) {
-        toast.success(response.data.msg || "Blog added successfully!");
-        // Reset form
+        toast.success(response.data.msg);
         setImage(false);
         setData({
           title: "",
@@ -85,24 +52,11 @@ const page = () => {
           authorImg: "/author_img.png",
         });
       } else {
-        toast.error(response.data.msg || "Failed to add blog");
+        toast.error("Error adding blog");
       }
     } catch (error) {
       console.error("Error submitting blog:", error);
-      
-      if (error.response) {
-        // Server responded with error
-        console.error("Server error:", error.response.data);
-        toast.error(`Server error: ${error.response.data.message || error.response.status}`);
-      } else if (error.request) {
-        // Request was made but no response
-        console.error("Network error:", error.request);
-        toast.error("Network error. Please check your connection.");
-      } else {
-        // Something else happened
-        console.error("Error:", error.message);
-        toast.error(`Error: ${error.message}`);
-      }
+      toast.error("Failed to submit blog. Try again.");
     } finally {
       setLoading(false);
     }
@@ -125,9 +79,9 @@ const page = () => {
           onChange={(e) => setImage(e.target.files[0])}
           type="file"
           id="image"
-          accept="image/*"
           hidden
           required
+          accept="image/*"
         />
         
         <p className="text-xl mt-4">Blog title</p>
@@ -168,11 +122,7 @@ const page = () => {
         <button
           type="submit"
           disabled={loading}
-          className={`mt-8 w-40 h-12 text-white ${
-            loading 
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-black hover:bg-gray-800'
-          }`}
+          className="mt-8 w-40 h-12 bg-black text-white disabled:bg-gray-400"
         >
           {loading ? "ADDING..." : "ADD"}
         </button>
