@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import ConnectDB from "@/lib/db";
-import EmailModel from "@/lib/models/EmailModels";
+import ConnectDB from "../../../lib/db";
+import EmailModel from "../../../lib/models/EmailModels";
+
 
 // POST /api/email
 export async function POST(request) {
