@@ -1,16 +1,22 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    appDir: true,
+    serverComponentsExternalPackages: ['mongoose'],
   },
-  // Add these for better CSS handling
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+    responseLimit: '10mb',
   },
-  // Ensure proper asset handling
+  // For App Router (which you're using)
+  serverRuntimeConfig: {
+    maxFileSizeBytes: 10 * 1024 * 1024, // 10MB
+  },
   images: {
-    domains: [], // Add your image domains if any
+    domains: ['localhost', 'your-domain.vercel.app'],
+    formats: ['image/webp', 'image/avif'],
   },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig
