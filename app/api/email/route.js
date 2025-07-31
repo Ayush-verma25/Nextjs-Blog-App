@@ -1,7 +1,7 @@
 // app/api/email/route.js
 import { NextResponse } from "next/server";
-import ConnectDB from "@/lib/config/db"; // Use alias if configured in tsconfig/jsconfig
-import EmailModel from "@/lib/models/EmailModel";
+import ConnectDB from "../../../lib/config/db";
+import EmailModel from "../../../lib/models/EmailModels";
 
 // POST /api/email
 export async function POST(request) {
