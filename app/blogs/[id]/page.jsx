@@ -21,27 +21,44 @@ const page = ({ params }) => {
         throw new Error("Blog ID is required");
       }
 
+      // Validate ObjectId format
+      if (!params.id.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new Error("Invalid blog ID format");
+      }
+
       const response = await axios.get("/api/blog", {
         params: {
           id: params.id,
         },
+        timeout: 10000, // 10 seconds timeout
       });
 
-      if (response.data && response.data.blog) {
+      if (response.data && response.data.success && response.data.blog) {
         setData(response.data.blog);
       } else {
-        throw new Error("Blog not found");
+        throw new Error(response.data?.error || "Blog not found");
       }
     } catch (error) {
       console.error("Error fetching blog data:", error);
-      setError(error.response?.data?.message || error.message || "Failed to load blog");
+      
+      if (error.code === 'ECONNABORTED') {
+        setError("Request timeout. Please try again.");
+      } else if (error.response?.status === 404) {
+        setError("Blog not found");
+      } else if (error.response?.status >= 500) {
+        setError("Server error. Please try again later.");
+      } else {
+        setError(error.response?.data?.error || error.message || "Failed to load blog");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBlogData();
+    if (params?.id) {
+      fetchBlogData();
+    }
   }, [params?.id]);
 
   // Loading state
@@ -60,18 +77,20 @@ const page = ({ params }) => {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
+        <div className="text-center max-w-md mx-auto px-4">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Oops!</h2>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={fetchBlogData}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Try Again
-          </button>
-          <Link href="/" className="block mt-4 text-blue-500 hover:underline">
-            Go Back Home
-          </Link>
+          <div className="space-y-2">
+            <button 
+              onClick={fetchBlogData}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mr-4"
+            >
+              Try Again
+            </button>
+            <Link href="/" className="inline-block px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+              Go Back Home
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -105,14 +124,21 @@ const page = ({ params }) => {
               alt={data.author || "Author"}
               width={60}
               height={60}
+              onError={(e) => {
+                e.target.src = '/default-author.png';
+              }}
             />
           )}
           <p className="mt-1 pb-2 text-lg max-w-[740px] mx-auto">
-            {data.author}
+            {data.author || "Anonymous"}
           </p>
           {data.date && (
             <p className="text-sm text-gray-600">
-              Published on {new Date(data.date).toLocaleDateString()}
+              Published on {new Date(data.date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
             </p>
           )}
         </div>
@@ -125,27 +151,58 @@ const page = ({ params }) => {
             width={1280}
             height={720}
             alt={data.title || "Blog image"}
+            onError={(e) => {
+              e.target.src = '/default-image.png';
+            }}
           />
         )}
-        <div
-          className="blog-content mt-8 prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: data.description }}
-        ></div>
+        <div className="blog-content mt-8 prose prose-lg max-w-none">
+          {/* Safe HTML rendering - you might want to use a proper markdown parser */}
+          <div
+            dangerouslySetInnerHTML={{ 
+              __html: data.description?.replace(/\n/g, '<br/>') || '' 
+            }}
+          />
+        </div>
         
         <div className="my-24">
           <p className="text-black font-semibold my-4">
             Share this article on social media
           </p>
           <div className="flex gap-2">
-            <Image src={assets.facebook_icon} width={50} alt="Facebook" className="cursor-pointer hover:opacity-80" />
-            <Image src={assets.twitter_icon} width={50} alt="Twitter" className="cursor-pointer hover:opacity-80" />
-            <Image src={assets.googleplus_icon} width={50} alt="Google Plus" className="cursor-pointer hover:opacity-80" />
+            <Image 
+              src={assets.facebook_icon} 
+              width={50} 
+              alt="Share on Facebook" 
+              className="cursor-pointer hover:opacity-80 transition-opacity" 
+            />
+            <Image 
+              src={assets.twitter_icon} 
+              width={50} 
+              alt="Share on Twitter" 
+              className="cursor-pointer hover:opacity-80 transition-opacity" 
+            />
+            <Image 
+              src={assets.googleplus_icon} 
+              width={50} 
+              alt="Share on Google Plus" 
+              className="cursor-pointer hover:opacity-80 transition-opacity" 
+            />
           </div>
         </div>
       </div>
       <Footer />
     </>
-  ) : null;
+  ) : (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Blog not found</h2>
+        <Link href="/" className="text-blue-500 hover:underline">
+          Go Back Home
+        </Link>
+      </div>
+    </div>
+  );
 };
 
 export default page;
