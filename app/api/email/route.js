@@ -6,15 +6,23 @@ import EmailModel from "../../../lib/models/EmailModels";
 // POST /api/email
 export async function POST(request) {
   try {
+    console.log("POST /api/email called");
+
     await ConnectDB();
-    const body = await request.json(); // assuming JSON input
+
+    const body = await request.json();
+    console.log("Request body:", body);
+
     const { email } = body;
 
     if (!email) {
+      console.log("Missing email in request body");
       return NextResponse.json({ success: false, msg: "Email is required" }, { status: 400 });
     }
 
-    await EmailModel.create({ email });
+    const newEmail = await EmailModel.create({ email });
+    console.log("Email saved:", newEmail);
+
     return NextResponse.json({ success: true, msg: "Email Subscribed" });
   } catch (err) {
     console.error("POST /api/email error:", err);
