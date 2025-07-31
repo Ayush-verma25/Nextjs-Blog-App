@@ -8,13 +8,13 @@ const Page = () => {
   const [emails, setEmails] = useState([]);
 
   const fetchEmails = async () => {
-    try {
-      const res = await axios.get("/api/email");
-      setEmails(res.data.emails);
-    } catch (err) {
-      toast.error("Failed to fetch emails");
-    }
-  };
+  try {
+    const res = await axios.get("/api/email");
+    setEmails(res.data.emails);
+  } catch (err) {
+    toast.error("Failed to fetch emails");
+  }
+};
 
   const deleteEmail = async (mongoId) => {
     try {
