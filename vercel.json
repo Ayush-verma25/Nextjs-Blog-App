@@ -1,13 +1,16 @@
 {
   "functions": {
-    "app/api/**/*.js": {
+    "app/api/blog/route.js": {
       "maxDuration": 30
     }
   },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    }
-  ]
+  "regions": ["iad1"],
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "env": {
+    "MONGODB_URI": "@mongodb_uri"
+  }
 }
