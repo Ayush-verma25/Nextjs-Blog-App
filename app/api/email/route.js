@@ -1,32 +1,30 @@
 import { NextResponse } from "next/server";
 import ConnectDB from "../../../lib/config/db";
 import EmailModel from "../../../lib/models/EmailModels";
-// POST /api/email - Subscribe a new email
+
+// POST
 export async function POST(request) {
   try {
     await ConnectDB();
-    const body = await request.json();
-    const { email } = body;
-
+    const { email } = await request.json();
     if (!email) {
       return NextResponse.json({ success: false, msg: "Email is required" }, { status: 400 });
     }
 
-    const alreadyExists = await EmailModel.findOne({ email });
-    if (alreadyExists) {
+    const exists = await EmailModel.findOne({ email });
+    if (exists) {
       return NextResponse.json({ success: false, msg: "Email already subscribed" }, { status: 409 });
     }
 
     await EmailModel.create({ email });
     return NextResponse.json({ success: true, msg: "Email Subscribed" }, { status: 201 });
-
   } catch (err) {
     console.error("POST /api/email error:", err);
     return NextResponse.json({ success: false, msg: "Server error" }, { status: 500 });
   }
 }
 
-// GET /api/email - Get all subscribed emails
+// GET
 export async function GET() {
   try {
     await ConnectDB();
@@ -38,16 +36,14 @@ export async function GET() {
   }
 }
 
-// DELETE /api/email?id=xxx - Delete a subscribed email
+// DELETE
 export async function DELETE(request) {
   try {
     await ConnectDB();
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.url, "http://localhost:3000");
     const id = searchParams.get("id");
 
-    if (!id) {
-      return NextResponse.json({ success: false, msg: "Missing ID" }, { status: 400 });
-    }
+    if (!id) return NextResponse.json({ success: false, msg: "Missing ID" }, { status: 400 });
 
     const deleted = await EmailModel.findByIdAndDelete(id);
     if (!deleted) {
@@ -55,7 +51,6 @@ export async function DELETE(request) {
     }
 
     return NextResponse.json({ success: true, msg: "Email Deleted" });
-
   } catch (err) {
     console.error("DELETE /api/email error:", err);
     return NextResponse.json({ success: false, msg: "Server error" }, { status: 500 });
