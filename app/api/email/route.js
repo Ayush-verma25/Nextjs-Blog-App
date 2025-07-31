@@ -40,7 +40,7 @@ export async function GET() {
 export async function DELETE(request) {
   try {
     await ConnectDB();
-    const { searchParams } = new URL(request.url, "http://localhost:3000");
+    const { searchParams } = new URL(request.url, "https://nextjs-blog-app-xi-tawny.vercel.app");
     const id = searchParams.get("id");
 
     if (!id) return NextResponse.json({ success: false, msg: "Missing ID" }, { status: 400 });
