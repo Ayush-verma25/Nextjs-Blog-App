@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import ConnectDB from "../../../lib/config/db"; // use alias (adjust if needed)
-import EmailModel from "../../../lib/models/EmailModel"; // singular for convention
-
+import ConnectDB from "../../../lib/config/db";
+import EmailModel from "../../../lib/models/EmailModels";
 // POST /api/email - Subscribe a new email
 export async function POST(request) {
   try {
