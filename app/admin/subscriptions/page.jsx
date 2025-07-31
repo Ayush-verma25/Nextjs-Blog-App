@@ -9,7 +9,7 @@ const Page = () => {
 
   const fetchEmails = async () => {
   try {
-    const res = await axios.post("/api/email", { email });
+    const res = await axios.get("/api/email");
     setEmails(res.data.emails);
   } catch (err) {
     toast.error("Failed to fetch emails");
